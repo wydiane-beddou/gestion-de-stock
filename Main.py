@@ -1,6 +1,6 @@
 import tkinter as tk
 import tkinter.messagebox as tkmessagebox
-import Gestion_de_stock
+import Class
 
 
 class Application(tk.Frame):
@@ -9,7 +9,9 @@ class Application(tk.Frame):
         super().__init__(master)
         self.master = master
         self.pack()
+        self.nom_entry = tk.Entry(self)
         self.create_widgets()
+
 
         # centrer la fenêtre principale
         width = 400
@@ -21,6 +23,7 @@ class Application(tk.Frame):
     def create_widgets(self):
         self.add_button = tk.Button(self, text="Ajouter un produit", command=self.add_produit)
         self.add_button.pack(side="top")
+
 
         self.remove_button = tk.Button(self, text="Supprimer un produit", command=self.remove_produit)
         self.remove_button.pack(side="top")
@@ -56,7 +59,7 @@ class Application(tk.Frame):
         description = self.description_entry.get()
         prix = float(self.prix_entry.get())
         quantite = int(self.quantite_entry.get())
-        Gestion_de_stock.boutique.add_produit(nom, description, prix, quantite)
+        Class.boutique.add_produit(nom, description, prix, quantite)
         self.top.destroy()
 
     def remove_produit(self):
@@ -73,7 +76,7 @@ class Application(tk.Frame):
     def remove_produit_db(self):
         id_produit = int(self.id_produit_entry.get())
         try:
-            Gestion_de_stock.boutique.remove_produit(id_produit)
+            Class.boutique.remove_produit(id_produit)
             tkmessagebox.showinfo("Suppression réussie", "Le produit a été supprimé avec succès")
         except ValueError:
             tkmessagebox.showerror("Suppression échouée", "Le produit avec cet ID n'existe pas")
@@ -105,12 +108,13 @@ class Application(tk.Frame):
             return
 
         # Vérification si l'ID du produit existe dans la base de données
-        if not self.db.check_id_produit(id_produit):
+        produit = Class.boutique.get_produit_by_id(id_produit)
+        if produit is None:
             tk.messagebox.showerror("Erreur", "ID de produit invalide")
             return
 
         # Vérification si le nom du produit est unique
-        if self.db.check_nom_produit(nom) and not self.db.check_nom_produit_for_id(id_produit, nom):
+        if Class.boutique.check_nom_produit(nom) and not Class.boutique.check_nom_produit_for_id(id_produit, nom):
             tk.messagebox.showerror("Erreur", "Le nom du produit doit être unique")
             return
 
@@ -122,11 +126,13 @@ class Application(tk.Frame):
             return
 
         # Mise à jour du produit
-        self.db.update_produit(id_produit, nom, prix)
-        tk.messagebox.showinfo("Succès", "Produit mis à jour avec succès")
+        produit.nom = nom
+        produit.prix = prix
+        Class.boutique.update_produit(produit)
 
-        # Rafraîchissement de l'affichage
-        self.refresh_table()
+        tk.messagebox.showinfo("Modification réussie", "Le produit a été modifié avec succès")
+        self.top.destroy()
+
 
 root = tk.Tk()
 app = Application(master=root)
